@@ -7,6 +7,7 @@ USER_ID_COLNAME = 'userid'
 MOVIE_ID_COLNAME = 'movieid'
 RATING_COLNAME = 'rating'
 
+
 # SETUP Functions
 def createdb(dbname):
     """
@@ -31,8 +32,9 @@ def createdb(dbname):
     cur.close()
     con.close()
 
+
 def delete_db(dbname):
-    con = getopenconnection(dbname = 'postgres')
+    con = getopenconnection(dbname='postgres')
     con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
     cur = con.cursor()
     cur.execute('drop database ' + dbname)
@@ -42,10 +44,10 @@ def delete_db(dbname):
 
 def deleteAllPublicTables(openconnection):
     cur = openconnection.cursor()
-    
+
     # Drop sequence nếu tồn tại (chỉ có trong round robin partition)
     cur.execute("DROP SEQUENCE IF EXISTS rrobin_seq CASCADE")
-    
+
     # Drop tất cả tables
     cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
     l = []
@@ -56,7 +58,8 @@ def deleteAllPublicTables(openconnection):
 
     cur.close()
 
-def getopenconnection(user='postgres', password='v.huwng.204', dbname='postgres'):
+
+def getopenconnection(user='postgres', password='lohuyls123', dbname='postgres'):
     return psycopg2.connect("dbname='" + dbname + "' user='" + user + "' host='localhost' password='" + password + "'")
 
 
@@ -72,14 +75,14 @@ def getCountrangepartition(ratingstablename, numberofpartitions, openconnection)
     cur = openconnection.cursor()
     countList = []
     interval = 5.0 / numberofpartitions
-    cur.execute("select count(*) from {0} where rating >= {1} and rating <= {2}".format(ratingstablename,0, interval))
+    cur.execute("select count(*) from {0} where rating >= {1} and rating <= {2}".format(ratingstablename, 0, interval))
     countList.append(int(cur.fetchone()[0]))
 
     lowerbound = interval
     for i in range(1, numberofpartitions):
         cur.execute("select count(*) from {0} where rating > {1} and rating <= {2}".format(ratingstablename,
-                                                                                          lowerbound,
-                                                                                          lowerbound + interval))
+                                                                                           lowerbound,
+                                                                                           lowerbound + interval))
         lowerbound += interval
         countList.append(int(cur.fetchone()[0]))
 
@@ -106,6 +109,7 @@ def getCountroundrobinpartition(ratingstablename, numberofpartitions, openconnec
     cur.close()
     return countList
 
+
 # Helpers for Tester functions
 def checkpartitioncount(cursor, expectedpartitions, prefix):
     cursor.execute(
@@ -127,7 +131,8 @@ def totalrowsinallpartitions(cur, n, rangepartitiontableprefix, partitionstartin
     return count
 
 
-def testrangeandrobinpartitioning(n, openconnection, rangepartitiontableprefix, partitionstartindex, ACTUAL_ROWS_IN_INPUT_FILE):
+def testrangeandrobinpartitioning(n, openconnection, rangepartitiontableprefix, partitionstartindex,
+                                  ACTUAL_ROWS_IN_INPUT_FILE):
     with openconnection.cursor() as cur:
         if not isinstance(n, int) or n < 0:
             # Test 1: Check the number of tables created, if 'n' is invalid
@@ -167,6 +172,7 @@ def testrangerobininsert(expectedtablename, itemid, openconnection, rating, user
         if count != 1:  return False
         return True
 
+
 def testEachRangePartition(ratingstablename, n, openconnection, rangepartitiontableprefix):
     countList = getCountrangepartition(ratingstablename, n, openconnection)
     cur = openconnection.cursor()
@@ -178,6 +184,7 @@ def testEachRangePartition(ratingstablename, n, openconnection, rangepartitionta
                 rangepartitiontableprefix, i, count, countList[i]
             ))
 
+
 def testEachRoundrobinPartition(ratingstablename, n, openconnection, roundrobinpartitiontableprefix):
     countList = getCountroundrobinpartition(ratingstablename, n, openconnection)
     cur = openconnection.cursor()
@@ -188,6 +195,7 @@ def testEachRoundrobinPartition(ratingstablename, n, openconnection, roundrobinp
             raise Exception("{0}{1} has {2} of rows while the correct number should be {3}".format(
                 roundrobinpartitiontableprefix, i, count, countList[i]
             ))
+
 
 # ##########
 
@@ -201,7 +209,7 @@ def testloadratings(MyAssignment, ratingstablename, filepath, openconnection, ro
     :return:Raises exception if any test fails
     """
     try:
-        MyAssignment.loadratings(ratingstablename,filepath,openconnection)
+        MyAssignment.loadratings(ratingstablename, filepath, openconnection)
         # Test 1: Count the number of rows inserted
         with openconnection.cursor() as cur:
             cur.execute('SELECT COUNT(*) from {0}'.format(ratingstablename))
@@ -215,7 +223,8 @@ def testloadratings(MyAssignment, ratingstablename, filepath, openconnection, ro
     return [True, None]
 
 
-def testrangepartition(MyAssignment, ratingstablename, n, openconnection, partitionstartindex, ACTUAL_ROWS_IN_INPUT_FILE):
+def testrangepartition(MyAssignment, ratingstablename, n, openconnection, partitionstartindex,
+                       ACTUAL_ROWS_IN_INPUT_FILE):
     """
     Tests the range partition function for Completness, Disjointness and Reconstruction
     :param ratingstablename: Argument for function to be tested
@@ -227,7 +236,8 @@ def testrangepartition(MyAssignment, ratingstablename, n, openconnection, partit
 
     try:
         MyAssignment.rangepartition(ratingstablename, n, openconnection)
-        testrangeandrobinpartitioning(n, openconnection, RANGE_TABLE_PREFIX, partitionstartindex, ACTUAL_ROWS_IN_INPUT_FILE)
+        testrangeandrobinpartitioning(n, openconnection, RANGE_TABLE_PREFIX, partitionstartindex,
+                                      ACTUAL_ROWS_IN_INPUT_FILE)
         testEachRangePartition(ratingstablename, n, openconnection, RANGE_TABLE_PREFIX)
         return [True, None]
     except Exception as e:
@@ -247,12 +257,14 @@ def testroundrobinpartition(MyAssignment, ratingstablename, numberofpartitions, 
     """
     try:
         MyAssignment.roundrobinpartition(ratingstablename, numberofpartitions, openconnection)
-        testrangeandrobinpartitioning(numberofpartitions, openconnection, RROBIN_TABLE_PREFIX, partitionstartindex, ACTUAL_ROWS_IN_INPUT_FILE)
+        testrangeandrobinpartitioning(numberofpartitions, openconnection, RROBIN_TABLE_PREFIX, partitionstartindex,
+                                      ACTUAL_ROWS_IN_INPUT_FILE)
         testEachRoundrobinPartition(ratingstablename, numberofpartitions, openconnection, RROBIN_TABLE_PREFIX)
     except Exception as e:
         traceback.print_exc()
         return [False, e]
     return [True, None]
+
 
 def testroundrobininsert(MyAssignment, ratingstablename, userid, itemid, rating, openconnection, expectedtableindex):
     """
@@ -270,7 +282,8 @@ def testroundrobininsert(MyAssignment, ratingstablename, userid, itemid, rating,
         MyAssignment.roundrobininsert(ratingstablename, userid, itemid, rating, openconnection)
         if not testrangerobininsert(expectedtablename, itemid, openconnection, rating, userid):
             raise Exception(
-                'Round robin insert failed! Couldnt find ({0}, {1}, {2}) tuple in {3} table'.format(userid, itemid, rating,
+                'Round robin insert failed! Couldnt find ({0}, {1}, {2}) tuple in {3} table'.format(userid, itemid,
+                                                                                                    rating,
                                                                                                     expectedtablename))
     except Exception as e:
         traceback.print_exc()
