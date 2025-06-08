@@ -43,7 +43,8 @@ def delete_db(dbname):
 def deleteAllPublicTables(openconnection):
     cur = openconnection.cursor()
     
-
+    # Drop sequence nếu tồn tại (chỉ có trong round robin partition)
+    cur.execute("DROP SEQUENCE IF EXISTS rrobin_seq CASCADE")
     
     # Drop tất cả tables
     cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
