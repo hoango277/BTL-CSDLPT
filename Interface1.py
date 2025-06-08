@@ -5,7 +5,7 @@ import psycopg2
 DATABASE_NAME = 'dds_assgn1'
 
 
-def getopenconnection(user='postgres', password='hoa0976271476', dbname=DATABASE_NAME):
+def getopenconnection(user='postgres', password='v.huwng.204', dbname=DATABASE_NAME):
     conn_string = f"dbname='{dbname}' user='{user}' host='localhost' password='{password}'"
     return psycopg2.connect(conn_string)
 
@@ -94,6 +94,64 @@ def roundrobininsert(ratingstablename, userid, itemid, rating, openconnection):
 
     partition_insert_sql = f"INSERT INTO {target_partition_name}(userid, movieid, rating) VALUES ({userid}, {itemid}, {rating});"
     cursor.execute(partition_insert_sql)
+    
+    cursor.close()
+    connection.commit()
+
+def range_partition(ratingstablename, numberofpartitions, openconnection):
+    connection = openconnection
+    cursor = connection.cursor()
+    RANGE_TABLE_PREFIX = 'range_part'
+
+    rating_step = 5.0 / numberofpartitions
+
+    partition_index = 0
+    while partition_index < numberofpartitions:
+        lower_bound = partition_index * rating_step
+        upper_bound = lower_bound + rating_step
+        partition_table = RANGE_TABLE_PREFIX + str(partition_index)
+
+
+        create_table_sql = f"CREATE TABLE IF NOT EXISTS {partition_table} (userid INTEGER, movieid INTEGER, rating FLOAT);"
+        cursor.execute(create_table_sql)
+        
+
+        if partition_index == 0:
+            insert_sql = f"INSERT INTO {partition_table} SELECT * FROM {ratingstablename} WHERE rating >= {lower_bound} AND rating <= {upper_bound};"
+        else:
+            insert_sql = f"INSERT INTO {partition_table} SELECT * FROM {ratingstablename} WHERE rating > {lower_bound} AND rating <= {upper_bound};"
+        
+        cursor.execute(insert_sql)
+        partition_index += 1
+    
+    cursor.close()
+    connection.commit()
+
+
+def range_insert(ratingstablename, userid, itemid, rating, openconnection):
+    connection = openconnection
+    cursor = connection.cursor()
+    RANGE_TABLE_PREFIX = 'range_part'
+
+
+    total_partitions = count_partitions(RANGE_TABLE_PREFIX, openconnection)
+    if total_partitions == 0:
+        raise Exception("Partitions have not been created. Call rangepartition first.")
+
+
+    rating_interval = 5.0 / total_partitions
+    partition_idx = int(rating / rating_interval)
+    
+
+    if partition_idx >= total_partitions:
+        partition_idx = total_partitions - 1
+    elif rating % rating_interval == 0 and rating != 0:
+        partition_idx = max(partition_idx - 1, 0)
+
+
+    target_table = RANGE_TABLE_PREFIX + str(partition_idx)
+    insert_query = f"INSERT INTO {target_table}(userid, movieid, rating) VALUES ({userid}, {itemid}, {rating});"
+    cursor.execute(insert_query)
     
     cursor.close()
     connection.commit()
