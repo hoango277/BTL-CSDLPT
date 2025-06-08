@@ -98,7 +98,7 @@ def roundrobininsert(ratingstablename, userid, itemid, rating, openconnection):
     cursor.close()
     connection.commit()
 
-def range_partition(ratingstablename, numberofpartitions, openconnection):
+def rangepartition(ratingstablename, numberofpartitions, openconnection):
     connection = openconnection
     cursor = connection.cursor()
     RANGE_TABLE_PREFIX = 'range_part'
@@ -128,7 +128,7 @@ def range_partition(ratingstablename, numberofpartitions, openconnection):
     connection.commit()
 
 
-def range_insert(ratingstablename, userid, itemid, rating, openconnection):
+def rangeinsert(ratingstablename, userid, itemid, rating, openconnection):
     connection = openconnection
     cursor = connection.cursor()
     RANGE_TABLE_PREFIX = 'range_part'
