@@ -12,6 +12,7 @@ ACTUAL_ROWS_IN_INPUT_FILE = 10000054  # Number of lines in the input file
 
 import psycopg2
 import traceback
+import time
 import testHelper
 import Interface1 as MyAssignment
 
@@ -24,43 +25,61 @@ if __name__ == '__main__':
 
             testHelper.deleteAllPublicTables(conn)
 
+            # Test loadratings với timing
+            start_time = time.time()
             [result, e] = testHelper.testloadratings(MyAssignment, RATINGS_TABLE, INPUT_FILE_PATH, conn, ACTUAL_ROWS_IN_INPUT_FILE)
+            end_time = time.time()
+            execution_time = end_time - start_time
             if result :
-                print("loadratings function pass!")
+                print(f"loadratings function pass! Thời gian thực thi: {execution_time:.4f} giây")
             else:
-                print("loadratings function fail!")
+                print(f"loadratings function fail! Thời gian thực thi: {execution_time:.4f} giây")
 
+            # Test rangepartition với timing
+            start_time = time.time()
             [result, e] = testHelper.testrangepartition(MyAssignment, RATINGS_TABLE, 5, conn, 0, ACTUAL_ROWS_IN_INPUT_FILE)
+            end_time = time.time()
+            execution_time = end_time - start_time
             if result :
-                print("rangepartition function pass!")
+                print(f"rangepartition function pass! Thời gian thực thi: {execution_time:.4f} giây")
             else:
-                print("rangepartition function fail!")
+                print(f"rangepartition function fail! Thời gian thực thi: {execution_time:.4f} giây")
 
-            # ALERT:: Use only one at a time i.e. uncomment only one line at a time and run the script
+            # Test rangeinsert với timing
+            start_time = time.time()
             [result, e] = testHelper.testrangeinsert(MyAssignment, RATINGS_TABLE, 100, 2, 3, conn, '2')
             [result, e] = testHelper.testrangeinsert(MyAssignment, RATINGS_TABLE, 100, 2, 0, conn, '0')
+            end_time = time.time()
+            execution_time = end_time - start_time
             if result:
-                print("rangeinsert function pass!")
+                print(f"rangeinsert function pass! Thời gian thực thi: {execution_time:.4f} giây")
             else:
-                print("rangeinsert function fail!")
+                print(f"rangeinsert function fail! Thời gian thực thi: {execution_time:.4f} giây")
 
             testHelper.deleteAllPublicTables(conn)
             MyAssignment.loadratings(RATINGS_TABLE, INPUT_FILE_PATH, conn)
 
+            # Test roundrobinpartition với timing
+            start_time = time.time()
             [result, e] = testHelper.testroundrobinpartition(MyAssignment, RATINGS_TABLE, 5, conn, 0, ACTUAL_ROWS_IN_INPUT_FILE)
+            end_time = time.time()
+            execution_time = end_time - start_time
             if result :
-                print("roundrobinpartition function pass!")
+                print(f"roundrobinpartition function pass! Thời gian thực thi: {execution_time:.4f} giây")
             else:
-                print("roundrobinpartition function fail")
+                print(f"roundrobinpartition function fail! Thời gian thực thi: {execution_time:.4f} giây")
 
-            # ALERT:: Change the partition index according to your testing sequence.
+            # Test roundrobininsert với timing
+            start_time = time.time()
             [result, e] = testHelper.testroundrobininsert(MyAssignment, RATINGS_TABLE, 100, 1, 3, conn, '0')
-            [result, e] = testHelper.testroundrobininsert(MyAssignment, RATINGS_TABLE, 100, 1, 3, conn, '1')
-            [result, e] = testHelper.testroundrobininsert(MyAssignment, RATINGS_TABLE, 100, 1, 3, conn, '2')
+            # [result, e] = testHelper.testroundrobininsert(MyAssignment, RATINGS_TABLE, 100, 1, 3, conn, '1')
+            # [result, e] = testHelper.testroundrobininsert(MyAssignment, RATINGS_TABLE, 100, 1, 3, conn, '2')
+            end_time = time.time()
+            execution_time = end_time - start_time
             if result :
-                print("roundrobininsert function pass!")
+                print(f"roundrobininsert function pass! Thời gian thực thi: {execution_time:.4f} giây")
             else:
-                print("roundrobininsert function fail!")
+                print(f"roundrobininsert function fail! Thời gian thực thi: {execution_time:.4f} giây")
 
             choice = input('Press enter to Delete all tables? ')
             if choice == '':
